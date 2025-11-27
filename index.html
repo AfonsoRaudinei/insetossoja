@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intensidade de Pragas da Soja por Estádio Fenológico</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #8596a8;
+            min-height: 100vh;
+            padding: 20px;
+            color: #2d3748;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(180deg, #8499ac 0%, #96a8ba 100%);
+            padding: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #7a8d9f;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-container {
+            width: 80px;
+            height: 80px;
+            background: transparent;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .logo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .logo-placeholder {
+            color: #7d96b3;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .header-name {
+            color: #1a4d5e;
+            font-size: 28px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .qrcode-container {
+            width: 80px;
+            height: 80px;
+            background: transparent;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .qrcode-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .qrcode-placeholder {
+            color: #7d96b3;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .content {
+            padding: 40px;
+        }
+
+        .main-title {
+            text-align: center;
+            font-size: 36px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 40px;
+            background: linear-gradient(135deg, #7d96b3 0%, #5a6d8a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Custom Dropdown */
+        .dropdown-section {
+            margin-bottom: 40px;
+        }
+
+        .dropdown-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .dropdown-container {
+            position: relative;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-container:focus-within {
+            border-color: #7d96b3;
+            box-shadow: 0 0 0 3px rgba(125, 150, 179, 0.1);
+        }
+
+        .dropdown-header {
+            padding: 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f7fafc;
+            border-radius: 10px;
+        }
+
+        .dropdown-header:hover {
+            background: #edf2f7;
+        }
+
+        .selected-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 24px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: white;
+            animation: tagAppear 0.3s ease;
+        }
+
+        @keyframes tagAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            font-weight: 700;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .tag-remove:hover {
+            opacity: 1;
+        }
+
+        .dropdown-arrow {
+            font-size: 20px;
+            color: #7d96b3;
+            transition: transform 0.3s ease;
+        }
+
+        .dropdown-arrow.open {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            z-index: 1000;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-menu.open {
+            max-height: 500px;
+            opacity: 1;
+            overflow-y: auto;
+        }
+
+        .dropdown-search {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #7d96b3;
+        }
+
+        .dropdown-actions {
+            padding: 12px;
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .select-all-btn {
+            background: #7d96b3;
+            color: white;
+        }
+
+        .select-all-btn:hover {
+            background: #6b8399;
+            transform: translateY(-1px);
+        }
+
+        .clear-all-btn {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .clear-all-btn:hover {
+            background: #cbd5e0;
+            transform: translateY(-1px);
+        }
+
+        .dropdown-options {
+            padding: 8px;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .option-item:hover {
+            background: #f7fafc;
+        }
+
+        .option-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .option-checkbox.checked {
+            border-color: transparent;
+        }
+
+        .option-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .option-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .option-label {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            margin-bottom: 40px;
+            background: #f7fafc;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        #pestChart {
+            height: 600px !important;
+        }
+
+        /* Custom Legend */
+        .custom-legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #f7fafc;
+            border-radius: 10px;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+            animation: legendAppear 0.5s ease;
+        }
+
+        @keyframes legendAppear {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .legend-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .legend-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 30px;
+            border-radius: 16px;
+            border-left: 6px solid #7d96b3;
+        }
+
+        .info-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-icon {
+            width: 28px;
+            height: 28px;
+            background: #7d96b3;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .info-section {
+            margin-bottom: 20px;
+        }
+
+        .info-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-subtitle {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-bullet {
+            width: 8px;
+            height: 8px;
+            background: #7d96b3;
+            border-radius: 50%;
+        }
+
+        .info-text {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #4a5568;
+        }
+
+        .info-footer {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #cbd5e0;
+            font-size: 13px;
+            color: #718096;
+            font-style: italic;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 20px;
+                padding: 30px 20px;
+            }
+
+            .header-left {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .header-name {
+                font-size: 24px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .main-title {
+                font-size: 28px;
+            }
+
+            .chart-container {
+                padding: 15px;
+            }
+
+            #pestChart {
+                height: 400px !important;
+            }
+
+            .custom-legend {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="logo-container">
+                    <img src="logo.png" alt="Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'logo-placeholder\'>LOGO<br>AQUI</div>'">
+                </div>
+                <h1 class="header-name">Raudinei Afonso</h1>
+            </div>
+            <div class="qrcode-container">
+                <img src="qrcode.png" alt="QR Code" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'qrcode-placeholder\'>QR CODE<br>AQUI</div>'">
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <h2 class="main-title">Intensidade de Pragas da Soja por Estádio Fenológico</h2>
+
+            <!-- Custom Dropdown -->
+            <div class="dropdown-section">
+                <label class="dropdown-label">Selecione as pragas para visualizar:</label>
+                <div class="dropdown-container">
+                    <div class="dropdown-header" onclick="toggleDropdown()">
+                        <div class="selected-tags" id="selectedTags">
+                            <span style="color: #718096; font-size: 14px;">Clique para selecionar pragas...</span>
+                        </div>
+                        <div class="dropdown-arrow" id="dropdownArrow">▼</div>
+                    </div>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <div class="dropdown-search">
+                            <input type="text" class="search-input" id="searchInput" placeholder="Buscar pragas..." oninput="filterOptions()">
+                        </div>
+                        <div class="dropdown-actions">
+                            <button class="action-btn select-all-btn" onclick="selectAll()">Selecionar Todas</button>
+                            <button class="action-btn clear-all-btn" onclick="clearAll()">Limpar Todas</button>
+                        </div>
+                        <div class="dropdown-options" id="dropdownOptions"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="chart-container">
+                <canvas id="pestChart"></canvas>
+            </div>
+
+            <!-- Custom Legend -->
+            <div class="custom-legend" id="customLegend"></div>
+
+            <!-- Info Box -->
+            <div class="info-box">
+                <div class="info-title">
+                    <div class="info-icon">i</div>
+                    Períodos Críticos de Infestação
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-subtitle">
+                        <div class="info-bullet"></div>
+                        Fase 1: Dominação de Tripes (V7-V11)
+                    </div>
+                    <p class="info-text">
+                        Período de maior incidência de tripes, com pico em V11 (89 indivíduos/m²). Causam deformação foliar 
+                        e redução do vigor da planta. Monitoramento contínuo e controle preventivo são essenciais nesta fase 
+                        para evitar danos ao desenvolvimento inicial da cultura.
+                    </p>
+                </div>
+
+                <div class="info-section">
+                    <div class="info-subtitle">
+                        <div class="info-bullet"></div>
+                        Fase 2: Ponto de Equilíbrio (R3)
+                    </div>
+                    <p class="info-text">
+                        Momento crítico onde tripes e lagartas se equivalem em intensidade. Percevejos iniciam colonização séria 
+                        (2,8/m²), marcando a transição entre as fases vegetativa e reprodutiva. Requer estratégia de controle dual 
+                        com atenção especial ao início da colonização por percevejos.
+                    </p>
+                </div>
+
+                <div class="info-section">
+                    <div class="info-subtitle">
+                        <div class="info-bullet"></div>
+                        Fase 3: Reino das Lagartas (R4-R6) - MAIS PERIGOSO
+                    </div>
+                    <p class="info-text">
+                        Período mais crítico da cultura. Pico absoluto em R4 com 49,86 lagartas/m², responsável por 95% do consumo 
+                        foliar total. Controle INTENSIVO é obrigatório para prevenir perdas severas de produtividade. Principais 
+                        espécies: Spodoptera frugiperda, Chrysodeixis includens e Pseudoplusia includens.
+                    </p>
+                </div>
+
+                <div class="info-section">
+                    <div class="info-subtitle">
+                        <div class="info-bullet"></div>
+                        Fase 4: Era dos Percevejos (R7-R8)
+                    </div>
+                    <p class="info-text">
+                        Dominância absoluta dos percevejos sugadores, com pico em R7 (19,44/m²). Euschistus heros e Piezodorus 
+                        guildinii causam danos diretos aos grãos através da sucção de nutrientes, comprometendo gravemente a 
+                        qualidade e o peso final. Controle intensivo é fundamental para preservar a qualidade comercial da produção.
+                    </p>
+                </div>
+
+                <div class="info-footer">
+                    <strong>Fonte:</strong> Dados de monitoramento de campo compilados conforme metodologia de amostragem padrão. 
+                    Valores expressos em número de indivíduos por metro quadrado (indivíduos/m²). As intensidades representam médias 
+                    observadas em condições de cultivo comercial. O Manejo Integrado de Pragas (MIP) com monitoramento sistemático 
+                    é essencial para tomada de decisão assertiva e uso racional de defensivos.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados reais do documento - convertidos para porcentagem relativa ao pico de cada praga
+        const pests = [
+            {
+                name: 'Tripes (Frankliniella schultzei, Thrips tabaci)',
+                shortName: 'Tripes',
+                color: '#e74c3c',
+                // Dados: V7(45), V9(67), V11(89-pico), R1(56), R2(43), R3(38), R4-R8(baixo)
+                data: [50.6, 75.3, 100, 62.9, 48.3, 42.7, 20, 10, 5, 2, 0, 0], // Porcentagem relativa ao pico de 89
+                peak: 'V11 (89/m²)'
+            },
+            {
+                name: 'Lagartas (Spodoptera, Chrysodeixis, Pseudoplusia)',
+                shortName: 'Lagartas',
+                color: '#f39c12',
+                // Dados: V7(2.1), V9(3.8), V11(8.5), R1(15.2), R2(25.8), R3(35.4), R4(49.86-pico), R5(42.3), R6(28.7), R7(18.4), R8(baixo)
+                data: [4.2, 7.6, 17.0, 30.5, 51.7, 71.0, 100, 84.8, 57.6, 36.9, 15, 5], // Porcentagem relativa ao pico de 49.86
+                peak: 'R4 (49,86/m²)'
+            },
+            {
+                name: 'Percevejos (Euschistus heros, Piezodorus guildinii)',
+                shortName: 'Percevejos',
+                color: '#27ae60',
+                // Dados: V7-V11(0.1), R1-R2(0.46), R3(2.8), R4(8.5), R5(12.7), R6(16.2), R7(19.44-pico), R8(12.1)
+                data: [0.5, 0.5, 0.5, 2.4, 2.4, 14.4, 43.7, 65.3, 83.3, 100, 62.2, 40], // Porcentagem relativa ao pico de 19.44
+                peak: 'R7 (19,44/m²)'
+            },
+            {
+                name: 'Mosca-branca (Bemisia tabaci)',
+                shortName: 'Mosca-branca',
+                color: '#9b59b6',
+                // Dados: V9(18), V11(25), R1(32-pico), depois declínio
+                data: [40, 56.3, 78.1, 100, 85, 60, 40, 25, 15, 8, 3, 0], // Porcentagem relativa ao pico de 32
+                peak: 'R1 (32/m²)'
+            }
+        ];
+
+        const stages = ['V7', 'V9', 'V11', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9'];
+        let selectedPests = [];
+        let chart = null;
+
+        // Initialize
+        function init() {
+            renderDropdownOptions();
+            initializeChart();
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdown = document.querySelector('.dropdown-container');
+                if (!dropdown.contains(event.target)) {
+                    closeDropdown();
+                }
+            });
+        }
+
+        // Render dropdown options
+        function renderDropdownOptions() {
+            const container = document.getElementById('dropdownOptions');
+            container.innerHTML = '';
+            
+            pests.forEach((pest, index) => {
+                const option = document.createElement('div');
+                option.className = 'option-item';
+                option.setAttribute('data-index', index);
+                option.onclick = () => togglePest(index);
+                
+                option.innerHTML = `
+                    <div class="option-checkbox" id="checkbox-${index}"></div>
+                    <div class="option-color" style="background: ${pest.color};"></div>
+                    <div class="option-label">${pest.name}</div>
+                `;
+                
+                container.appendChild(option);
+            });
+        }
+
+        // Toggle dropdown
+        function toggleDropdown() {
+            const menu = document.getElementById('dropdownMenu');
+            const arrow = document.getElementById('dropdownArrow');
+            menu.classList.toggle('open');
+            arrow.classList.toggle('open');
+        }
+
+        function closeDropdown() {
+            const menu = document.getElementById('dropdownMenu');
+            const arrow = document.getElementById('dropdownArrow');
+            menu.classList.remove('open');
+            arrow.classList.remove('open');
+        }
+
+        // Toggle pest selection
+        function togglePest(index) {
+            const pestIndex = selectedPests.indexOf(index);
+            
+            if (pestIndex > -1) {
+                selectedPests.splice(pestIndex, 1);
+            } else {
+                selectedPests.push(index);
+            }
+            
+            updateSelectedTags();
+            updateCheckboxes();
+            updateChart();
+            updateLegend();
+        }
+
+        // Update selected tags
+        function updateSelectedTags() {
+            const container = document.getElementById('selectedTags');
+            
+            if (selectedPests.length === 0) {
+                container.innerHTML = '<span style="color: #718096; font-size: 14px;">Clique para selecionar pragas...</span>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            selectedPests.forEach(index => {
+                const pest = pests[index];
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.style.background = pest.color;
+                tag.innerHTML = `
+                    ${pest.shortName}
+                    <span class="tag-remove" onclick="event.stopPropagation(); togglePest(${index})">×</span>
+                `;
+                container.appendChild(tag);
+            });
+        }
+
+        // Update checkboxes
+        function updateCheckboxes() {
+            pests.forEach((pest, index) => {
+                const checkbox = document.getElementById(`checkbox-${index}`);
+                if (selectedPests.includes(index)) {
+                    checkbox.classList.add('checked');
+                    checkbox.style.background = pest.color;
+                } else {
+                    checkbox.classList.remove('checked');
+                    checkbox.style.background = 'white';
+                }
+            });
+        }
+
+        // Filter options
+        function filterOptions() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const options = document.querySelectorAll('.option-item');
+            
+            options.forEach(option => {
+                const label = option.querySelector('.option-label').textContent.toLowerCase();
+                if (label.includes(searchTerm)) {
+                    option.style.display = 'flex';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        }
+
+        // Select all pests
+        function selectAll() {
+            selectedPests = pests.map((_, index) => index);
+            updateSelectedTags();
+            updateCheckboxes();
+            updateChart();
+            updateLegend();
+        }
+
+        // Clear all selections
+        function clearAll() {
+            selectedPests = [];
+            updateSelectedTags();
+            updateCheckboxes();
+            updateChart();
+            updateLegend();
+        }
+
+        // Initialize chart
+        function initializeChart() {
+            const ctx = document.getElementById('pestChart').getContext('2d');
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: stages,
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#7d96b3',
+                            borderWidth: 2,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const pest = pests[selectedPests[context.datasetIndex]];
+                                    return pest.shortName + ': ' + context.parsed.y.toFixed(1) + '% (Pico: ' + pest.peak + ')';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                },
+                                font: {
+                                    size: 12,
+                                    family: 'Inter'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Intensidade Relativa da Infestação (%)',
+                                font: {
+                                    size: 14,
+                                    weight: '600',
+                                    family: 'Inter'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Estádio Fenológico',
+                                font: {
+                                    size: 14,
+                                    weight: '600',
+                                    family: 'Inter'
+                                }
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12,
+                                    family: 'Inter'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update chart
+        function updateChart() {
+            const datasets = selectedPests.map(index => {
+                const pest = pests[index];
+                return {
+                    label: pest.shortName,
+                    data: pest.data,
+                    borderColor: pest.color,
+                    backgroundColor: pest.color + '20',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: pest.color,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    fill: true
+                };
+            });
+            
+            chart.data.datasets = datasets;
+            chart.update();
+        }
+
+        // Update legend
+        function updateLegend() {
+            const container = document.getElementById('customLegend');
+            container.innerHTML = '';
+            
+            selectedPests.forEach((index, i) => {
+                const pest = pests[index];
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.style.borderLeftColor = pest.color;
+                item.style.animationDelay = (i * 0.05) + 's';
+                
+                item.innerHTML = `
+                    <div class="legend-color" style="background: ${pest.color};"></div>
+                    <div class="legend-label">${pest.name} - Pico: ${pest.peak}</div>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        // Initialize on load
+        window.onload = init;
+    </script>
+</body>
+</html>
